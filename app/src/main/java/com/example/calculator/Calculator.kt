@@ -20,11 +20,11 @@ class Calculator {
         return num1 * num2
     }
 
-    fun divide(): String {
+    fun divide(): Double {
         return if (num2 != 0) {
-            (num1.toDouble() / num2.toDouble()).toString()
+            num1.toDouble() / num2.toDouble()
         } else {
-            "Impossível dividir por 0"
+            0.0
         }
     }
 }

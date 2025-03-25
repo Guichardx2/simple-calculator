@@ -1,11 +1,16 @@
 package com.example.calculator
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,129 +28,118 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun Layout(calculator: Calculator) {
     var input by remember { mutableStateOf("") } //Guarda o valor dos botoões pressionados
-    var result by remember { mutableStateOf("0") } //Guarda o resultado final
+    var result by remember { mutableStateOf<Any>(0) } //Guarda o resultado final
     var lastOperation by remember { mutableStateOf<String?>(null) } //Variável que guarda a operação a ser realizada
 
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(32.dp))
-        Text(
-            text = if (input.isEmpty()) result.toString() else "$input",
+
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            color = Color.Black,
-            style = MaterialTheme.typography.headlineLarge,
-            textAlign = TextAlign.End
+                .weight(1f)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.Bottom
+        ) {
+            Text(
+                text = when {
+                    lastOperation != null && input.isEmpty() -> "${calculator.num1} $lastOperation"
+                    input.isNotEmpty() && lastOperation != null -> "${calculator.num1} $lastOperation $input"
+                    input.isNotEmpty() -> input
+                    else -> result.toString()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                color = Color.Black,
+                style = MaterialTheme.typography.headlineLarge,
+                textAlign = TextAlign.End
+            )
+        }
+
+        // Numpad na parte inferior
+        val numPad = listOf(
+            listOf("1", "2", "3", "+"),
+            listOf("4", "5", "6", "-"),
+            listOf("7", "8", "9", "*"),
+            listOf("C", "0", "=", "/")
         )
 
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = { input += "1" }, modifier = Modifier.weight(1f)) {
-                Text(text = "1")
-            }
-            Button(onClick = { input += "2" }, modifier = Modifier.weight(1f)) {
-                Text(text = "2")
-            }
-            Button(onClick = { input += "3" }, modifier = Modifier.weight(1f)) {
-                Text(text = "3")
-            }
-            Button(onClick = {
-                if (input.isNotEmpty()) {
-                    calculator.num1 = input.toInt() // seta o valor do input para num1
-                    input = "" // Limpa o valor do input
-                    lastOperation = "+" // Guarda a operação de soma
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+        ) {
+            numPad.forEach { row ->
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    row.forEach { buttonText ->
+                        LayoutButton(text = buttonText, onClick = {
+                            when (buttonText) {
+                                "C" -> {
+                                    input = ""
+                                    result = 0
+                                    lastOperation = null
+                                }
+                                "=" -> {
+                                    if (input.isNotEmpty() && lastOperation != null) {
+                                        calculator.num2 = input.toInt()
+                                        input = ""
+                                        result = when (lastOperation) {
+                                            "+" -> calculator.sum()
+                                            "-" -> calculator.subtract()
+                                            "*" -> calculator.multiply()
+                                            "/" -> String.format("%.4f", calculator.divide()).toDouble()
+                                            else -> calculator.num2
+                                        }
+                                        lastOperation = null
+                                    }
+                                }
+                                "+", "-", "*", "/" -> {
+                                    if (input.isNotEmpty()) {
+                                        calculator.num1 = input.toInt()
+                                        lastOperation = buttonText
+                                        input = ""
+                                    }
+                                }
+                                else -> {
+                                    input += buttonText
+                                }
+                            }
+                        }, modifier = Modifier.weight(1f))
+                    }
                 }
-            }, modifier = Modifier.weight(1f)) {
-                Text(text = "+")
-            }
-        }
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = { input += "4" }, modifier = Modifier.weight(1f)) {
-                Text(text = "4")
-            }
-            Button(onClick = { input += "5" }, modifier = Modifier.weight(1f)) {
-                Text(text = "5")
-            }
-            Button(onClick = { input += "6" }, modifier = Modifier.weight(1f)) {
-                Text(text = "6")
-            }
-            Button(onClick = {
-                if (input.isNotEmpty()) {
-                    calculator.num1 = input.toInt() // seta o valor do input para num1
-                    input = "" // Limpa o valor do input
-                    lastOperation = "-" // Guarda a operação de subtração
-                }
-            }, modifier = Modifier.weight(1f)) {
-                Text(text = "-")
-            }
-        }
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = { input += "7" }, modifier = Modifier.weight(1f)) {
-                Text(text = "7")
-            }
-            Button(onClick = { input += "8" }, modifier = Modifier.weight(1f)) {
-                Text(text = "8")
-            }
-            Button(onClick = { input += "9" }, modifier = Modifier.weight(1f)) {
-                Text(text = "9")
-            }
-            Button(onClick = {
-                if (input.isNotEmpty()) {
-                    calculator.num1 = input.toInt() // seta o valor do input para num1
-                    input = "" // Limpa o valor do input
-                    lastOperation = "*" // Guarda a operação de multiplicação
-                }
-            }, modifier = Modifier.weight(1f)) {
-                Text(text = "*")
-            }
-        }
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = {
-                input = "" // Limpa o valor do input
-                result = "0" // Reseta o resultado
-                lastOperation = null}, // Reseta a operação
-                modifier = Modifier.weight(1f)) {
-                Text(text = "C")
-            }
-            Button(onClick = { input += "0" }, modifier = Modifier.weight(1f)) {
-                Text(text = "0")
-            }
-            Button(onClick = {
-                if (input.isNotEmpty()) {
-                    calculator.num2 = input.toInt() // seta o valor do input para num2
-                    input = "" // Limpa o valor do input
-
-                    // Executa a operação baseada na última operação selecionada
-                    result = when (lastOperation) {
-                        "+" -> calculator.sum().toString()
-                        "-" -> calculator.subtract().toString()
-                        "*" -> calculator.multiply().toString()
-                        "/" -> calculator.divide()
-                        else -> calculator.num2.toString()
-                    } // Switch case para saber qual operação da classe Calculator realizar com base no operador guardado
-
-                    lastOperation = null // Reseta a operação após o cálculo
-                }
-            }, modifier = Modifier.weight(1f)) {
-                Text(text = "=")
-            }
-            Button(onClick = {
-                if (input.isNotEmpty()) {
-                    calculator.num1 = input.toInt() // seta o valor do input para num1
-                    input = "" // Limpa o valor do input
-                    lastOperation = "/" // Guarda a operação de divisão
-                }
-            }, modifier = Modifier.weight(1f)) {
-                Text(text = "/")
             }
         }
     }
 }
 
+//fun mathExpressionSolver(expression: String): Double {
+//    val expressionList = expression.split(" ")
+//    val num1 = expressionList[0].toDouble()
+//    val operator = expressionList[1]
+//    val num2 = expressionList[2].toDouble()
+//    return when (operator) {
+//        "+" -> num1 + num2
+//        "-" -> num1 - num2
+//        "*" -> num1 * num2
+//        "/" -> num1 / num2
+//        else -> 0.0
+//    }
+//}
+
+@Composable
+fun LayoutButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Button(
+        onClick = onClick,
+        modifier = modifier
+            .padding(4.dp).size(64.dp),
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Text(text = text)
+    }
+}
 
 @Preview(showBackground = true)
 @Composable
